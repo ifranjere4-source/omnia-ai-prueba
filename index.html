@@ -2,522 +2,406 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <meta name="theme-color" content="#080808">
-  <title>OMNIA AI</title>
-
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    body {
-      background: #080808;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      min-height: 100vh;
-      overflow-x: hidden;
-      touch-action: pan-y;
-    }
-
-    button, input, textarea {
-      font: inherit;
-    }
-
-    button {
-      cursor: pointer;
-    }
-
-    .hidden { display: none !important; }
-
-    header {
-      height: 68px;
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      padding: 0 18px;
-      border-bottom: 1px solid #242424;
-      position: sticky;
-      top: 0;
-      background: #080808;
-      z-index: 5;
-    }
-
-    .back-btn, .icon-btn {
-      border: 0;
-      background: transparent;
-      color: white;
-      font-size: 27px;
-      min-width: 38px;
-    }
-
-    .brand {
-      font-size: 21px;
-      font-weight: 800;
-      letter-spacing: 3px;
-    }
-
-    .brand-mark {
-      margin-right: 7px;
-    }
-
-    .header-right {
-      margin-left: auto;
-      display: flex;
-      gap: 14px;
-      align-items: center;
-    }
-
-    .muted { color: #888; }
-
-    .page {
-      max-width: 760px;
-      margin: auto;
-      padding: 24px 18px 110px;
-    }
-
-    .welcome {
-      text-align: center;
-      padding: 60px 10px 45px;
-    }
-
-    .welcome h1 {
-      font-size: 37px;
-      letter-spacing: 4px;
-    }
-
-    .welcome p {
-      color: #888;
-      margin-top: 12px;
-    }
-
-    .section-title {
-      font-size: 13px;
-      color: #777;
-      letter-spacing: 2px;
-      margin: 20px 0 13px;
-      text-transform: uppercase;
-    }
-
-    .modes {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .mode-card {
-      background: #131313;
-      border: 1px solid #292929;
-      border-radius: 15px;
-      color: white;
-      text-align: left;
-      padding: 20px 15px;
-      min-height: 112px;
-    }
-
-    .mode-card:active { border-color: white; }
-
-    .mode-card h3 {
-      margin-bottom: 9px;
-      font-size: 16px;
-    }
-
-    .mode-card p {
-      color: #888;
-      font-size: 12px;
-      line-height: 1.5;
-    }
-
-    .model-row {
-      display: flex;
-      gap: 10px;
-      margin-top: 25px;
-    }
-
-    .model-chip {
-      flex: 1;
-      background: #111;
-      color: #ccc;
-      border: 1px solid #292929;
-      border-radius: 10px;
-      padding: 13px 5px;
-      font-size: 12px;
-    }
-
-    .model-chip:active { border-color: white; }
-
-    /* CHAT */
-
-    #chatPage {
-      height: calc(100dvh - 68px);
-      display: flex;
-      flex-direction: column;
-      max-width: 850px;
-      margin: auto;
-      padding: 0 14px;
-    }
-
-    .chat-heading {
-      padding: 15px 4px;
-      border-bottom: 1px solid #222;
-    }
-
-    .chat-heading h2 { font-size: 17px; }
-
-    .chat-heading p {
-      color: #777;
-      font-size: 12px;
-      margin-top: 5px;
-    }
-
-    #messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 18px 2px;
-      display: flex;
-      flex-direction: column;
-      gap: 17px;
-    }
-
-    .empty-chat {
-      margin: auto;
-      text-align: center;
-      color: #777;
-      line-height: 1.7;
-      padding: 25px;
-    }
-
-    .message {
-      max-width: 90%;
-      padding: 13px 15px;
-      border-radius: 15px;
-      line-height: 1.55;
-      font-size: 14px;
-      overflow-wrap: anywhere;
-      white-space: pre-wrap;
-    }
-
-    .message.user {
-      align-self: flex-end;
-      background: #242424;
-      border: 1px solid #333;
-    }
-
-    .message.ai {
-      align-self: flex-start;
-      background: #111;
-      border: 1px solid #292929;
-    }
-
-    .message .speaker {
-      font-size: 11px;
-      color: #aaa;
-      margin-bottom: 7px;
-      font-weight: bold;
-    }
-
-    .composer {
-      padding: 12px 0 max(12px, env(safe-area-inset-bottom));
-      background: #080808;
-      border-top: 1px solid #222;
-    }
-
-    .attachments {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      padding: 0 3px 9px;
-    }
-
-    .attachment {
-      background: #202020;
-      border-radius: 8px;
-      padding: 7px 9px;
-      color: #ddd;
-      font-size: 11px;
-    }
-
-    .composer-box {
-      display: flex;
-      align-items: flex-end;
-      gap: 7px;
-      background: #171717;
-      border: 1px solid #343434;
-      border-radius: 17px;
-      padding: 8px;
-    }
-
-    .composer-box button {
-      background: transparent;
-      border: 0;
-      color: white;
-      font-size: 23px;
-      width: 34px;
-      min-width: 34px;
-      height: 36px;
-    }
-
-    #messageInput {
-      flex: 1;
-      min-width: 0;
-      max-height: 110px;
-      resize: none;
-      background: transparent;
-      color: white;
-      border: 0;
-      outline: none;
-      font-size: 15px;
-      padding: 9px 2px;
-    }
-
-    #messageInput::placeholder { color: #777; }
-
-    #sendBtn {
-      background: white;
-      color: black;
-      border-radius: 11px;
-      font-size: 19px;
-      font-weight: bold;
-    }
-
-    /* SIDEBAR */
-
-    #sidebar {
-      position: fixed;
-      inset: 0;
-      z-index: 20;
-      background: rgba(0,0,0,.65);
-      display: none;
-    }
-
-    #sidebar.open { display: block; }
-
-    .side-panel {
-      width: min(85%, 340px);
-      height: 100%;
-      background: #101010;
-      border-right: 1px solid #333;
-      padding: 22px 17px;
-      overflow-y: auto;
-    }
-
-    .side-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 25px;
-    }
-
-    .side-top h2 { letter-spacing: 2px; }
-
-    .new-chat {
-      width: 100%;
-      padding: 13px;
-      color: white;
-      background: #202020;
-      border: 1px solid #383838;
-      border-radius: 10px;
-      margin-bottom: 22px;
-      text-align: left;
-    }
-
-    .history-item {
-      width: 100%;
-      display: block;
-      padding: 13px 10px;
-      margin-bottom: 6px;
-      background: transparent;
-      border: 0;
-      color: #ccc;
-      text-align: left;
-      border-radius: 9px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .history-item:active { background: #242424; }
-
-    /* MODAL */
-
-    .modal {
-      position: fixed;
-      inset: 0;
-      z-index: 30;
-      background: rgba(0,0,0,.8);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .modal-card {
-      background: #151515;
-      border: 1px solid #383838;
-      border-radius: 17px;
-      width: 100%;
-      max-width: 420px;
-      padding: 22px;
-    }
-
-    .modal-card h2 { margin-bottom: 16px; }
-
-    .modal-card p {
-      color: #aaa;
-      font-size: 13px;
-      line-height: 1.6;
-      margin-bottom: 14px;
-    }
-
-    .modal-card input, .modal-card select {
-      width: 100%;
-      padding: 12px;
-      margin: 8px 0;
-      border-radius: 9px;
-      background: #080808;
-      color: white;
-      border: 1px solid #383838;
-    }
-
-    .modal-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 15px;
-    }
-
-    .modal-actions button {
-      flex: 1;
-      padding: 12px;
-      border-radius: 9px;
-      border: 1px solid #444;
-      background: #252525;
-      color: white;
-    }
-
-    .modal-actions .primary {
-      background: white;
-      color: black;
-    }
-
-    .settings-list {
-      display: grid;
-      gap: 10px;
-    }
-
-    .settings-list button {
-      background: #202020;
-      color: white;
-      border: 1px solid #383838;
-      border-radius: 10px;
-      padding: 14px;
-      text-align: left;
-    }
-
-    @media (max-width: 380px) {
-      .welcome h1 { font-size: 30px; }
-      .mode-card { padding: 16px 11px; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#080808">
+<title>OMNIA AI</title>
+
+<style>
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  background: #080808;
+  color: white;
+  font-family: Arial, sans-serif;
+  min-height: 100dvh;
+}
+
+button, input, textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+header {
+  height: 62px;
+  padding: 0 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #242424;
+  position: sticky;
+  top: 0;
+  background: #080808;
+  z-index: 5;
+}
+
+.brand {
+  font-weight: 900;
+  letter-spacing: 4px;
+}
+
+.icon {
+  border: 0;
+  color: white;
+  background: none;
+  font-size: 25px;
+  padding: 8px;
+}
+
+main {
+  max-width: 850px;
+  margin: auto;
+  padding: 20px 16px 110px;
+}
+
+.welcome {
+  text-align: center;
+  padding: 55px 5px 35px;
+}
+
+.logo {
+  font-size: 38px;
+  font-weight: 900;
+  letter-spacing: 8px;
+}
+
+.subtitle {
+  color: #888;
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+h2 {
+  font-size: 17px;
+  margin: 28px 0 14px;
+}
+
+.modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.mode {
+  min-height: 110px;
+  padding: 17px 13px;
+  text-align: left;
+  color: white;
+  background: #141414;
+  border: 1px solid #292929;
+  border-radius: 13px;
+}
+
+.mode:active {
+  background: #242424;
+}
+
+.mode strong {
+  display: block;
+  margin-bottom: 9px;
+}
+
+.mode small {
+  color: #888;
+  line-height: 1.4;
+}
+
+.models {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.model {
+  color: white;
+  background: #151515;
+  border: 1px solid #333;
+  border-radius: 25px;
+  padding: 11px 14px;
+}
+
+.model.active {
+  border-color: white;
+  background: #292929;
+}
+
+#chatPage {
+  display: none;
+}
+
+#messages {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 15px 0;
+}
+
+.message {
+  padding: 15px;
+  border-radius: 13px;
+  background: #151515;
+  border: 1px solid #252525;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
+.message.user {
+  background: #222;
+  margin-left: 30px;
+}
+
+.message.ai {
+  margin-right: 10px;
+}
+
+.sender {
+  display: block;
+  color: #aaa;
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  margin-bottom: 9px;
+}
+
+.composer {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 12px;
+  background: #080808;
+  border-top: 1px solid #252525;
+  gap: 8px;
+  z-index: 6;
+}
+
+.composer input {
+  flex: 1;
+  min-width: 0;
+  background: #171717;
+  color: white;
+  border: 1px solid #333;
+  border-radius: 25px;
+  padding: 13px 16px;
+  outline: none;
+  font-size: 16px;
+}
+
+.send {
+  width: 46px;
+  border: 0;
+  border-radius: 50%;
+  background: white;
+  color: black;
+  font-size: 21px;
+}
+
+#sidebar, #settings {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: #090909;
+  padding: 22px;
+  overflow-y: auto;
+}
+
+.sideItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 14px;
+  background: #171717;
+  border: 1px solid #292929;
+  color: white;
+  border-radius: 10px;
+  margin: 9px 0;
+}
+
+.sideTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sideActions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.sideActions button {
+  color: #bbb;
+  background: #252525;
+  border: 0;
+  border-radius: 6px;
+  padding: 7px;
+}
+
+.close {
+  float: right;
+  background: none;
+  color: white;
+  border: 0;
+  font-size: 27px;
+}
+
+.settingBox {
+  background: #151515;
+  padding: 15px;
+  border-radius: 12px;
+  margin: 12px 0;
+}
+
+.settingBox textarea {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  color: white;
+  background: #222;
+  border: 1px solid #444;
+  border-radius: 8px;
+  resize: vertical;
+  font-size: 16px;
+}
+
+.primary {
+  width: 100%;
+  padding: 13px;
+  border: 0;
+  border-radius: 9px;
+  background: white;
+  color: black;
+  font-weight: bold;
+  margin-top: 12px;
+}
+
+.status {
+  color: #999;
+  font-size: 12px;
+  text-align: center;
+  padding: 10px;
+}
+
+.demoNotice {
+  color: #777;
+  font-size: 11px;
+  text-align: center;
+  padding: 8px;
+}
+
+@media(max-width: 420px) {
+  .modes {
+    gap: 9px;
+  }
+
+  .mode {
+    padding: 14px 11px;
+  }
+}
+</style>
 </head>
 
 <body>
 
-  <header>
-    <button class="back-btn" id="backBtn" aria-label="Volver">‹</button>
-    <div class="brand"><span class="brand-mark">✝</span>OMNIA</div>
+<header>
+  <button class="icon" id="backBtn">‹</button>
+  <div class="brand">OMNIA AI</div>
+  <div>
+    <button class="icon" id="historyBtn">☰</button>
+    <button class="icon" id="settingsBtn">⚙</button>
+  </div>
+</header>
 
-    <div class="header-right">
-      <button class="icon-btn" id="historyBtn" aria-label="Historial">☰</button>
-      <button class="icon-btn" id="settingsBtn" aria-label="Configuración">⚙</button>
-    </div>
-  </header>
+<main>
 
-  <main id="homePage" class="page">
-    <section class="welcome">
-      <h1>OMNIA AI</h1>
-      <p>Tu propio equipo de IAs.</p>
-    </section>
-
-    <div class="section-title">Elegí cómo querés conversar</div>
-
-    <section class="modes">
-      <button class="mode-card" data-mode="individual">
-        <h3>Individual</h3>
-        <p>Elegí una IA y hablá directamente con ella.</p>
-      </button>
-
-      <button class="mode-card" data-mode="triple">
-        <h3>Triple Chat</h3>
-        <p>Las tres IAs responden y pueden debatir.</p>
-      </button>
-
-      <button class="mode-card" data-mode="room">
-        <h3>Sala de IA</h3>
-        <p>Las IAs conversan entre ellas y vos podés intervenir.</p>
-      </button>
-
-      <button class="mode-card" data-mode="supreme">
-        <h3>Supremo</h3>
-        <p>Las tres colaboran para dar una respuesta unificada.</p>
-      </button>
-    </section>
-
-    <div class="section-title">Tus modelos</div>
-
-    <section class="model-row">
-      <button class="model-chip" data-model="ChatGPT">ChatGPT</button>
-      <button class="model-chip" data-model="Claude">Claude</button>
-      <button class="model-chip" data-model="Gemini">Gemini</button>
-    </section>
-  </main>
-
-  <section id="chatPage" class="hidden">
-    <div class="chat-heading">
-      <h2 id="chatTitle">Nuevo chat</h2>
-      <p id="chatSubtitle">OMNIA AI</p>
-    </div>
-
-    <div id="messages">
-      <div class="empty-chat">
-        <h2>¿Qué querés explorar?</h2>
-        Escribí tu mensaje para comenzar.
-      </div>
-    </div>
-
-    <div class="composer">
-      <div id="attachments" class="attachments"></div>
-
-      <div class="composer-box">
-        <button id="attachBtn" aria-label="Adjuntar archivo">＋</button>
-        <input id="fileInput" type="file" multiple accept="image/*,video/*,.pdf,.doc,.docx,.txt" hidden>
-        <textarea id="messageInput" rows="1" placeholder="Escribí tu mensaje..."></textarea>
-        <button id="micBtn" aria-label="Micrófono">🎙</button>
-        <button id="sendBtn" aria-label="Enviar">↑</button>
-      </div>
-    </div>
-  </section>
-
-  <div id="sidebar">
-    <aside class="side-panel">
-      <div class="side-top">
-        <h2>OMNIA</h2>
-        <button class="icon-btn" id="closeSidebar">×</button>
-      </div>
-
-      <button class="new-chat" id="newChatBtn">＋ Nuevo chat</button>
-      <div class="section-title">Historial</div>
-      <div id="historyList"></div>
-    </aside>
+<section id="homePage">
+  <div class="welcome">
+    <div class="logo">OMNIA</div>
+    <div class="subtitle">Tres inteligencias. Una sola experiencia.</div>
   </div>
 
-  <div id="modal" class="modal hidden">
-    <div class="modal-card" id="modalContent"></div>
+  <h2>Elegí tu modo</h2>
+
+  <div class="modes">
+    <button class="mode" data-mode="individual">
+      <strong>Individual</strong>
+      <small>Hablá con una IA a elección.</small>
+    </button>
+
+    <button class="mode" data-mode="triple">
+      <strong>Triple Chat</strong>
+      <small>Las tres IA responden por separado.</small>
+    </button>
+
+    <button class="mode" data-mode="room">
+      <strong>Sala de IA</strong>
+      <small>Las IA participan en una misma sala.</small>
+    </button>
+
+    <button class="mode" data-mode="supreme">
+      <strong>Supremo</strong>
+      <small>Una respuesta unificada.</small>
+    </button>
   </div>
 
-  <script src="app.js"></script>
+  <h2>Modelos</h2>
+
+  <div class="models">
+    <button class="model active" data-model="chatgpt">ChatGPT</button>
+    <button class="model" data-model="claude">Claude</button>
+    <button class="model" data-model="gemini">Gemini</button>
+  </div>
+</section>
+
+<section id="chatPage">
+  <h2 id="chatTitle">Conversación</h2>
+  <div class="demoNotice">Versión de prueba · Respuestas simuladas</div>
+  <div id="messages"></div>
+  <div class="status" id="status"></div>
+</section>
+
+</main>
+
+<div class="composer" id="composer">
+  <input id="messageInput" placeholder="Escribí tu mensaje..." autocomplete="off">
+  <button class="send" id="sendBtn">↑</button>
+</div>
+
+<aside id="sidebar">
+  <button class="close" id="closeHistory">×</button>
+  <h2>Historial</h2>
+  <button class="primary" id="newChatBtn">+ Nuevo chat</button>
+  <div id="historyList"></div>
+</aside>
+
+<section id="settings">
+  <button class="close" id="closeSettings">×</button>
+  <h2>Configuración</h2>
+
+  <div class="settingBox">
+    <strong>Instrucciones para las IA</strong>
+    <textarea id="instructions" rows="6" placeholder="Escribí cómo querés que respondan las IA..."></textarea>
+    <button class="primary" id="saveSettings">Guardar cambios</button>
+  </div>
+
+  <div class="settingBox">
+    <strong>Información</strong>
+    <p style="color:#999">Las conexiones reales con ChatGPT, Claude y Gemini se incorporarán mediante un servidor seguro.</p>
+  </div>
+</section>
+
+<script src="app.js"></script>
 </body>
 </html>
