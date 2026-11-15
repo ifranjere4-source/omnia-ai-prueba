@@ -1,492 +1,383 @@
 
-const homePage = document.getElementById("homePage");
-const chatPage = document.getElementById("chatPage");
-const messages = document.getElementById("messages");
-const messageInput = document.getElementById("messageInput");
-const chatTitle = document.getElementById("chatTitle");
-const chatSubtitle = document.getElementById("chatSubtitle");
-const sidebar = document.getElementById("sidebar");
-const historyList = document.getElementById("historyList");
-const modal = document.getElementById("modal");
-const modalContent = document.getElementById("modalContent");
-const attachmentsBox = document.getElementById("attachments");
+const $ = id => document.getElementById(id);
 
-let currentMode = "individual";
-let currentModel = "ChatGPT";
-let currentChatId = null;
-let attachedFiles = [];
-let chats = JSON.parse(localStorage.getItem("omnia_chats") || "[]");
+const homePage = $("homePage");
+const chatPage = $("chatPage");
+const composer = $("composer");
+const messagesBox = $("messages");
+const input = $("messageInput");
 
-const modelNames = ["ChatGPT", "Claude", "Gemini"];
-
-const modeNames = {
-  individual: "Individual",
-  triple: "Triple Chat",
-  room: "Sala de IA",
-  supreme: "Supremo"
+const modelNames = {
+  chatgpt: "ChatGPT",
+  claude: "Claude",
+  gemini: "Gemini",
+  supreme: "OMNIA SUPREMO"
 };
+
+let selectedModel = "chatgpt";
+let currentMode = null;
+let currentChat = null;
+
+let chats = [];
+
+try {
+  chats = JSON.parse(localStorage.getItem("omnia_chats") || "[]");
+  if (!Array.isArray(chats)) chats = [];
+} catch {
+  chats = [];
+}
+
+let instructions =
+  localStorage.getItem("omnia_instructions") || "";
+
+$("instructions").value = instructions;
 
 function saveChats() {
   localStorage.setItem("omnia_chats", JSON.stringify(chats));
 }
 
 function showHome() {
-  homePage.classList.remove("hidden");
-  chatPage.classList.add("hidden");
-  currentChatId = null;
+  homePage.style.display = "block";
+  chatPage.style.display = "none";
+  composer.style.display = "none";
+  currentChat = null;
+  currentMode = null;
 }
 
-function showChat() {
-  homePage.classList.add("hidden");
-  chatPage.classList.remove("hidden");
-  messageInput.focus();
-}
-
-function createChat(mode, model = "ChatGPT") {
-  currentMode = mode;
-  currentModel = model;
-
+function createChat(mode) {
   const chat = {
-    id: Date.now().toString(),
-    title: "Nuevo chat",
+    id: Date.now(),
+    title: "Nueva conversación",
     mode,
-    model,
-    messages: [],
-    created: new Date().toISOString()
+    messages: []
   };
 
   chats.unshift(chat);
-  currentChatId = chat.id;
+  currentChat = chat;
+  currentMode = mode;
 
-  chatTitle.textContent = modeNames[mode];
-  updateSubtitle();
-  renderMessages();
   saveChats();
-  showChat();
+
+  const titles = {
+    individual: "Chat individual",
+    triple: "Triple Chat",
+    room: "Sala de IA",
+    supreme: "OMNIA Supremo"
+  };
+
+  $("chatTitle").textContent = titles[mode];
+
+  messagesBox.innerHTML = "";
+  homePage.style.display = "none";
+  chatPage.style.display = "block";
+  composer.style.display = "flex";
+
+  $("status").textContent = "";
+
   renderHistory();
 }
 
-function getCurrentChat() {
-  return chats.find(chat => chat.id === currentChatId);
-}
-
-function updateSubtitle() {
-  if (currentMode === "individual") {
-    chatSubtitle.textContent = currentModel;
-  } else {
-    chatSubtitle.textContent = "ChatGPT · Claude · Gemini";
-  }
-}
-
-function renderMessages() {
-  messages.innerHTML = "";
-
-  const chat = getCurrentChat();
-
-  if (!chat || chat.messages.length === 0) {
-    messages.innerHTML = `
-      <div class="empty-chat">
-        <h2>¿Qué querés explorar?</h2>
-        Escribí tu mensaje para comenzar.
-      </div>`;
-    return;
-  }
-
-  chat.messages.forEach(message => {
-    const element = document.createElement("div");
-    element.className = "message " + message.type;
-
-    if (message.type === "ai") {
-      const speaker = document.createElement("div");
-      speaker.className = "speaker";
-      speaker.textContent = message.speaker || "OMNIA";
-      element.appendChild(speaker);
-    }
-
-    const content = document.createElement("div");
-    content.textContent = message.text;
-    element.appendChild(content);
-
-    messages.appendChild(element);
-  });
-
-  messages.scrollTop = messages.scrollHeight;
-}
-
-function addMessage(type, text, speaker = "") {
-  const chat = getCurrentChat();
+function openChat(id) {
+  const chat = chats.find(c => c.id === id);
   if (!chat) return;
 
-  chat.messages.push({ type, text, speaker });
+  currentChat = chat;
+  currentMode = chat.mode;
 
-  if (chat.title === "Nuevo chat" && type === "user") {
-    chat.title = text.slice(0, 35);
-  }
+  homePage.style.display = "none";
+  chatPage.style.display = "block";
+  composer.style.display = "flex";
 
-  saveChats();
-  renderMessages();
-  renderHistory();
+  $("chatTitle").textContent = chat.title;
+  messagesBox.innerHTML = "";
+
+  chat.messages.forEach(message => {
+    if (message.role === "user") {
+      addBubble("Vos", message.content, "user");
+    } else {
+      addBubble(
+        modelNames[message.model] || message.model,
+        message.content,
+        "ai"
+      );
+    }
+  });
+
+  $("sidebar").style.display = "none";
 }
 
-// RESPUESTAS DE DEMOSTRACIÓN
-// Estas respuestas no vienen de las APIs reales todavía.
+function addBubble(sender, content, type) {
+  const bubble = document.createElement("div");
+  bubble.className = `message ${type}`;
 
-function demoReply(model, question) {
+  const label = document.createElement("span");
+  label.className = "sender";
+  label.textContent = sender;
+
+  const text = document.createElement("div");
+  text.textContent = content;
+
+  bubble.append(label, text);
+  messagesBox.appendChild(bubble);
+
+  window.scrollTo(0, document.body.scrollHeight);
+}
+
+function renderHistory() {
+  const list = $("historyList");
+  list.innerHTML = "";
+
+  chats.forEach(chat => {
+    const row = document.createElement("div");
+    row.className = "sideItem";
+
+    const title = document.createElement("span");
+    title.className = "sideTitle";
+    title.textContent = chat.title;
+
+    title.onclick = () => openChat(chat.id);
+
+    const actions = document.createElement("div");
+    actions.className = "sideActions";
+
+    const rename = document.createElement("button");
+    rename.textContent = "✎";
+    rename.title = "Cambiar nombre";
+
+    rename.onclick = () => {
+      const name = prompt("Nuevo nombre:", chat.title);
+
+      if (name && name.trim()) {
+        chat.title = name.trim();
+        saveChats();
+        renderHistory();
+
+        if (currentChat && currentChat.id === chat.id) {
+          $("chatTitle").textContent = chat.title;
+        }
+      }
+    };
+
+    const remove = document.createElement("button");
+    remove.textContent = "×";
+    remove.title = "Eliminar conversación";
+
+    remove.onclick = () => {
+      if (!confirm("¿Eliminar esta conversación?")) return;
+
+      chats = chats.filter(c => c.id !== chat.id);
+
+      if (currentChat && currentChat.id === chat.id) {
+        showHome();
+      }
+
+      saveChats();
+      renderHistory();
+    };
+
+    actions.append(rename, remove);
+    row.append(title, actions);
+    list.appendChild(row);
+  });
+}
+
+function simulatedAnswer(model, text) {
+  const custom = instructions
+    ? `\n\nInstrucciones configuradas: ${instructions}`
+    : "";
+
   const responses = {
-    ChatGPT:
-      "Soy ChatGPT dentro de OMNIA. Recibí tu mensaje: \"" +
-      question +
-      "\". Esta es una respuesta de demostración. Cuando conectemos la API podré analizarlo y responder realmente.",
+    chatgpt:
+      `Esta es una respuesta de demostración de ChatGPT.\n\nTu mensaje fue: "${text}"${custom}`,
 
-    Claude:
-      "Soy Claude dentro de OMNIA. Voy a observar tu planteamiento desde otro punto de vista. Esta respuesta es de demostración; la conexión real se agregará después.",
+    claude:
+      `Esta es una respuesta de demostración de Claude.\n\nEstoy analizando tu mensaje: "${text}"${custom}`,
 
-    Gemini:
-      "Soy Gemini dentro de OMNIA. Puedo aportar una perspectiva diferente sobre tu pregunta. Esta respuesta es provisional hasta conectar el servicio real."
+    gemini:
+      `Esta es una respuesta de demostración de Gemini.\n\nSobre lo que escribiste: "${text}"${custom}`
   };
 
   return responses[model];
 }
 
-function sendMessage() {
-  const text = messageInput.value.trim();
+async function sendMessage() {
+  const content = input.value.trim();
 
-  if (!text && attachedFiles.length === 0) return;
+  if (!content || !currentChat) return;
 
-  const question = text || "Revisá los archivos adjuntos.";
+  input.value = "";
 
-  addMessage("user", question);
+  currentChat.messages.push({
+    role: "user",
+    content
+  });
 
-  if (attachedFiles.length > 0) {
-    const names = attachedFiles.map(file => file.name).join(", ");
-    addMessage("user", "Archivos adjuntos: " + names);
+  addBubble("Vos", content, "user");
+
+  if (currentChat.title === "Nueva conversación") {
+    currentChat.title = content.slice(0, 35);
+    $("chatTitle").textContent = currentChat.title;
   }
 
-  messageInput.value = "";
-  messageInput.style.height = "auto";
+  saveChats();
+  renderHistory();
 
-  attachedFiles = [];
-  attachmentsBox.innerHTML = "";
+  $("status").textContent = "OMNIA está pensando...";
+
+  await new Promise(resolve => setTimeout(resolve, 500));
+
+  let results = [];
 
   if (currentMode === "individual") {
-    addMessage("ai", demoReply(currentModel, question), currentModel);
+    results.push({
+      model: selectedModel,
+      answer: simulatedAnswer(selectedModel, content)
+    });
   }
 
-  if (currentMode === "triple") {
-    modelNames.forEach(model => {
-      addMessage("ai", demoReply(model, question), model);
-    });
+  if (currentMode === "triple" || currentMode === "room") {
+    results = ["chatgpt", "claude", "gemini"].map(model => ({
+      model,
+      answer: simulatedAnswer(model, content)
+    }));
   }
 
   if (currentMode === "supreme") {
-    addMessage(
-      "ai",
-      "Las tres IAs deberían analizar tu mensaje y preparar una respuesta conjunta. Esta es una vista de demostración: todavía falta conectar los modelos reales.",
-      "OMNIA SUPREMO"
-    );
+    results.push({
+      model: "supreme",
+      answer:
+        "Esta sería la respuesta unificada de las tres IA.\n\n" +
+        simulatedAnswer("chatgpt", content) +
+        "\n\n" +
+        simulatedAnswer("claude", content) +
+        "\n\n" +
+        simulatedAnswer("gemini", content)
+    });
   }
 
-  if (currentMode === "room") {
-    addMessage(
-      "ai",
-      "La Sala de IA está preparada para funcionar. Cuando conectemos los modelos, podrán conversar entre sí por turnos, debatir y responderte. Esta es una vista de demostración.",
-      "OMNIA · SALA DE IA"
-    );
-  }
+  results.forEach(result => {
+    currentChat.messages.push({
+      role: "assistant",
+      model: result.model,
+      content: result.answer
+    });
 
-  renderMessages();
+    addBubble(
+      modelNames[result.model],
+      result.answer,
+      "ai"
+    );
+  });
+
+  saveChats();
+  renderHistory();
+
+  $("status").textContent = "";
 }
 
-// MODOS
-
-document.querySelectorAll(".mode-card").forEach(button => {
+document.querySelectorAll("[data-mode]").forEach(button => {
   button.addEventListener("click", () => {
-    const mode = button.dataset.mode;
-
-    if (mode === "individual") {
-      openModelPicker();
-    } else {
-      createChat(mode);
-    }
+    createChat(button.dataset.mode);
   });
 });
 
-function openModelPicker() {
-  modalContent.innerHTML = `
-    <h2>Elegí una IA</h2>
-    <p>¿Con cuál querés conversar?</p>
-    <div class="settings-list">
-      <button data-choice="ChatGPT">ChatGPT</button>
-      <button data-choice="Claude">Claude</button>
-      <button data-choice="Gemini">Gemini</button>
-    </div>
-    <div class="modal-actions">
-      <button id="cancelModal">Cancelar</button>
-    </div>
-  `;
+document.querySelectorAll("[data-model]").forEach(button => {
+  button.addEventListener("click", () => {
+    selectedModel = button.dataset.model;
 
-  modal.classList.remove("hidden");
-
-  modalContent.querySelectorAll("[data-choice]").forEach(button => {
-    button.addEventListener("click", () => {
-      modal.classList.add("hidden");
-      createChat("individual", button.dataset.choice);
+    document.querySelectorAll("[data-model]").forEach(b => {
+      b.classList.toggle("active", b === button);
     });
   });
-
-  document.getElementById("cancelModal").onclick = closeModal;
-}
-
-// CONFIGURACIÓN DE MODELOS
-
-document.querySelectorAll(".model-chip").forEach(button => {
-  button.addEventListener("click", () => {
-    const model = button.dataset.model;
-    openModelSettings(model);
-  });
 });
 
-function openModelSettings(model) {
-  modalContent.innerHTML = `
-    <h2>Configuración · ${model}</h2>
-    <p>Preferencias de conversación para este modelo.</p>
+$("sendBtn").addEventListener("click", sendMessage);
 
-    <label>Estilo de respuesta</label>
-    <select id="modelStyle">
-      <option>Equilibrado</option>
-      <option>Creativo</option>
-      <option>Preciso</option>
-      <option>Detallado</option>
-    </select>
-
-    <label>Instrucciones personalizadas</label>
-    <input id="modelInstructions"
-      placeholder="Escribí tus preferencias...">
-
-    <div class="modal-actions">
-      <button id="cancelModal">Cancelar</button>
-      <button class="primary" id="saveModel">Guardar</button>
-    </div>
-  `;
-
-  modal.classList.remove("hidden");
-
-  const key = "omnia_settings_" + model;
-  const saved = JSON.parse(localStorage.getItem(key) || "{}");
-
-  document.getElementById("modelStyle").value =
-    saved.style || "Equilibrado";
-
-  document.getElementById("modelInstructions").value =
-    saved.instructions || "";
-
-  document.getElementById("cancelModal").onclick = closeModal;
-
-  document.getElementById("saveModel").onclick = () => {
-    localStorage.setItem(key, JSON.stringify({
-      style: document.getElementById("modelStyle").value,
-      instructions: document.getElementById("modelInstructions").value
-    }));
-
-    closeModal();
-  };
-}
-
-// CONFIGURACIÓN GENERAL
-
-document.getElementById("settingsBtn").onclick = () => {
-  modalContent.innerHTML = `
-    <h2>Configuración</h2>
-    <div class="settings-list">
-      <button id="configChatGPT">Configurar ChatGPT</button>
-      <button id="configClaude">Configurar Claude</button>
-      <button id="configGemini">Configurar Gemini</button>
-    </div>
-    <div class="modal-actions">
-      <button id="cancelModal">Cerrar</button>
-    </div>
-  `;
-
-  modal.classList.remove("hidden");
-
-  document.getElementById("cancelModal").onclick = closeModal;
-
-  modelNames.forEach(model => {
-    document.getElementById("config" + model).onclick = () => {
-      openModelSettings(model);
-    };
-  });
-};
-
-function closeModal() {
-  modal.classList.add("hidden");
-}
-
-modal.addEventListener("click", event => {
-  if (event.target === modal) closeModal();
-});
-
-// HISTORIAL
-
-function renderHistory() {
-  historyList.innerHTML = "";
-
-  if (chats.length === 0) {
-    historyList.innerHTML =
-      '<p class="muted">Todavía no hay conversaciones.</p>';
-    return;
-  }
-
-  chats.forEach(chat => {
-    const button = document.createElement("button");
-    button.className = "history-item";
-    button.textContent = chat.title;
-
-    button.onclick = () => {
-      currentChatId = chat.id;
-      currentMode = chat.mode;
-      currentModel = chat.model;
-
-      chatTitle.textContent = modeNames[chat.mode];
-      updateSubtitle();
-      renderMessages();
-
-      sidebar.classList.remove("open");
-      showChat();
-    };
-
-    historyList.appendChild(button);
-  });
-}
-
-document.getElementById("historyBtn").onclick = () => {
-  renderHistory();
-  sidebar.classList.add("open");
-};
-
-document.getElementById("closeSidebar").onclick = () => {
-  sidebar.classList.remove("open");
-};
-
-sidebar.addEventListener("click", event => {
-  if (event.target === sidebar) {
-    sidebar.classList.remove("open");
-  }
-});
-
-document.getElementById("newChatBtn").onclick = () => {
-  sidebar.classList.remove("open");
-  showHome();
-};
-
-// VOLVER ATRÁS
-
-document.getElementById("backBtn").onclick = () => {
-  if (sidebar.classList.contains("open")) {
-    sidebar.classList.remove("open");
-    return;
-  }
-
-  if (!chatPage.classList.contains("hidden")) {
-    showHome();
-    return;
-  }
-
-  sidebar.classList.add("open");
-};
-
-// ARCHIVOS
-
-document.getElementById("attachBtn").onclick = () => {
-  document.getElementById("fileInput").click();
-};
-
-document.getElementById("fileInput").addEventListener("change", event => {
-  const files = Array.from(event.target.files);
-
-  attachedFiles.push(...files);
-  attachmentsBox.innerHTML = "";
-
-  attachedFiles.forEach((file, index) => {
-    const item = document.createElement("span");
-    item.className = "attachment";
-    item.textContent = "📎 " + file.name + " ×";
-
-    item.onclick = () => {
-      attachedFiles.splice(index, 1);
-      updateAttachments();
-    };
-
-    attachmentsBox.appendChild(item);
-  });
-
-  event.target.value = "";
-});
-
-function updateAttachments() {
-  attachmentsBox.innerHTML = "";
-
-  attachedFiles.forEach((file, index) => {
-    const item = document.createElement("span");
-    item.className = "attachment";
-    item.textContent = "📎 " + file.name + " ×";
-
-    item.onclick = () => {
-      attachedFiles.splice(index, 1);
-      updateAttachments();
-    };
-
-    attachmentsBox.appendChild(item);
-  });
-}
-
-// MICRÓFONO
-
-document.getElementById("micBtn").onclick = () => {
-  const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  if (!SpeechRecognition) {
-    alert("El reconocimiento de voz no está disponible en este navegador.");
-    return;
-  }
-
-  const recognition = new SpeechRecognition();
-
-  recognition.lang = "es-UY";
-  recognition.interimResults = false;
-
-  recognition.onresult = event => {
-    const spokenText = event.results[0][0].transcript;
-    messageInput.value +=
-      (messageInput.value ? " " : "") + spokenText;
-  };
-
-  recognition.onerror = () => {
-    alert("No se pudo reconocer el audio. Probá nuevamente.");
-  };
-
-  recognition.start();
-};
-
-// ENVIAR MENSAJES
-
-document.getElementById("sendBtn").onclick = sendMessage;
-
-messageInput.addEventListener("keydown", event => {
-  if (event.key === "Enter" && !event.shiftKey) {
+input.addEventListener("keydown", event => {
+  if (event.key === "Enter") {
     event.preventDefault();
     sendMessage();
   }
 });
 
-messageInput.addEventListener("input", () => {
-  messageInput.style.height = "auto";
-  messageInput.style.height =
-    Math.min(messageInput.scrollHeight, 110) + "px";
-});
+$("historyBtn").onclick = () => {
+  renderHistory();
+  $("sidebar").style.display = "block";
+};
 
-// INICIO
+$("closeHistory").onclick = () => {
+  $("sidebar").style.display = "none";
+};
+
+$("newChatBtn").onclick = () => {
+  $("sidebar").style.display = "none";
+  showHome();
+};
+
+$("settingsBtn").onclick = () => {
+  $("settings").style.display = "block";
+};
+
+$("closeSettings").onclick = () => {
+  $("settings").style.display = "none";
+};
+
+$("saveSettings").onclick = () => {
+  instructions = $("instructions").value.trim();
+
+  localStorage.setItem(
+    "omnia_instructions",
+    instructions
+  );
+
+  $("settings").style.display = "none";
+};
+
+$("backBtn").onclick = () => {
+  if ($("settings").style.display === "block") {
+    $("settings").style.display = "none";
+    return;
+  }
+
+  if ($("sidebar").style.display === "block") {
+    $("sidebar").style.display = "none";
+    return;
+  }
+
+  if (chatPage.style.display === "block") {
+    showHome();
+    return;
+  }
+
+  renderHistory();
+  $("sidebar").style.display = "block";
+};
+
+// Abrir historial deslizando hacia la derecha.
+let touchStartX = 0;
+let touchStartY = 0;
+
+document.addEventListener("touchstart", event => {
+  touchStartX = event.touches[0].clientX;
+  touchStartY = event.touches[0].clientY;
+}, { passive: true });
+
+document.addEventListener("touchend", event => {
+  const endX = event.changedTouches[0].clientX;
+  const endY = event.changedTouches[0].clientY;
+
+  const differenceX = endX - touchStartX;
+  const differenceY = Math.abs(endY - touchStartY);
+
+  if (
+    differenceX > 90 &&
+    differenceY < 80 &&
+    touchStartX < 45 &&
+    $("settings").style.display !== "block"
+  ) {
+    renderHistory();
+    $("sidebar").style.display = "block";
+  }
+}, { passive: true });
 
 renderHistory();
-showHome();
